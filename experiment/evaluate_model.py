@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.base import clone
 from sklearn.experimental import enable_halving_search_cv # noqa
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score  
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import warnings
 import time
@@ -31,12 +31,12 @@ def alarm_handler(signum, frame):
     raise TimeOutException
 
 def set_env_vars(n_jobs):
-    os.environ['OMP_NUM_THREADS'] = n_jobs 
-    os.environ['OPENBLAS_NUM_THREADS'] = n_jobs 
+    os.environ['OMP_NUM_THREADS'] = n_jobs
+    os.environ['OPENBLAS_NUM_THREADS'] = n_jobs
     os.environ['MKL_NUM_THREADS'] = n_jobs
 
 def evaluate_model(
-    dataset, 
+    dataset,
     results_path,
     random_state,
     est_name,
@@ -44,8 +44,8 @@ def evaluate_model(
     model,
     test=False,
     sym_data=False,
-    target_noise=0.0, 
-    feature_noise=0.0, 
+    target_noise=0.0,
+    feature_noise=0.0,
     ##########
     # valid options for eval_kwargs
     ##########
@@ -71,7 +71,7 @@ def evaluate_model(
     # setup data
     ##################################################
     features, labels, feature_names =  read_file(
-        dataset, 
+        dataset,
         use_dataframe=use_dataframe
     )
     print('feature_names:',feature_names)
@@ -90,7 +90,7 @@ def evaluate_model(
 
     print('max time:',MAXTIME)
 
-    # if dataset is large, subsample the training set 
+    # if dataset is large, subsample the training set
     if max_train_samples > 0 and len(y_train) > max_train_samples:
         print('subsampling training data from',len(X_train),
               'to',max_train_samples)
@@ -105,13 +105,13 @@ def evaluate_model(
     # scale and normalize the data
     if scale_x:
         print('scaling X')
-        sc_X = StandardScaler() 
+        sc_X = StandardScaler()
         X_train_scaled = sc_X.fit_transform(X_train)
         X_test_scaled = sc_X.transform(X_test)
         if use_dataframe:
-            X_train_scaled = pd.DataFrame(X_train_scaled, 
+            X_train_scaled = pd.DataFrame(X_train_scaled,
                                           columns=feature_names)
-            X_test_scaled = pd.DataFrame(X_test_scaled, 
+            X_test_scaled = pd.DataFrame(X_test_scaled,
                                           columns=feature_names)
     else:
         X_train_scaled = X_train
@@ -126,25 +126,25 @@ def evaluate_model(
         y_train_scaled = y_train
 
 
-    ################################################## 
+    ##################################################
     # noise
-    ################################################## 
+    ##################################################
     if target_noise > 0:
         print('adding',target_noise,'noise to target')
-        y_train_scaled += np.random.normal(0, 
+        y_train_scaled += np.random.normal(0,
                     target_noise*np.sqrt(np.mean(np.square(y_train_scaled))),
                     size=len(y_train_scaled))
     # add noise to the features
     if feature_noise > 0:
         print('adding',target_noise,'noise to features')
-        X_train_scaled = np.array([x 
+        X_train_scaled = np.array([x
             + np.random.normal(0, feature_noise*np.sqrt(np.mean(np.square(x))),
                                size=len(x))
                                    for x in X_train_scaled.T]).T
 
-    ################################################## 
+    ##################################################
     # run any method-specific pre_train routines
-    ################################################## 
+    ##################################################
     if pre_train:
         pre_train(est, X_train_scaled, y_train_scaled)
 
@@ -152,10 +152,10 @@ def evaluate_model(
     if test and len(test_params) != 0:
         est.set_params(**test_params)
 
-    ################################################## 
+    ##################################################
     # Fit models
-    ################################################## 
-    if not use_dataframe: 
+    ##################################################
+    if not use_dataframe:
         assert isinstance(X_train_scaled, np.ndarray)
         assert isinstance(X_test_scaled, np.ndarray)
     print('X_train:',type(X_train_scaled),X_train_scaled.shape)
@@ -171,7 +171,7 @@ def evaluate_model(
 
     time_time = time.time() - t0t
     print('Training time measure:', time_time)
-    
+
     ##################################################
     # store results
     ##################################################
@@ -181,7 +181,7 @@ def evaluate_model(
         'algorithm':est_name,
         'params':jsonify(est.get_params()),
         'random_state':random_state,
-        'time_time': time_time, 
+        'time_time': time_time,
     }
     if sym_data:
         results['true_model'] = true_model
@@ -191,7 +191,7 @@ def evaluate_model(
 
     if 'X' in inspect.signature(model).parameters.keys():
         if not isinstance(X_train_scaled, pd.DataFrame):
-            X_df = pd.DataFrame(X_train_scaled, 
+            X_df = pd.DataFrame(X_train_scaled,
                                           columns=feature_names)
         else:
             X_df = X_train_scaled
@@ -203,8 +203,8 @@ def evaluate_model(
     # scores
     ##################################################
 
-    for fold, target, X in  [ 
-                             ['train', y_train, X_train_scaled], 
+    for fold, target, X in  [
+                             ['train', y_train, X_train_scaled],
                              ['test', y_test, X_test_scaled]
                             ]:
 
@@ -216,8 +216,8 @@ def evaluate_model(
                               ('mae',mean_absolute_error),
                               ('r2', r2_score)
                              ]:
-            results[score + '_' + fold] = scorer(target, y_pred) 
-    
+            results[score + '_' + fold] = scorer(target, y_pred)
+
     # simplicity
     results['simplicity'] = simplicity(results['symbolic_model'], feature_names)
 
@@ -256,17 +256,17 @@ if __name__ == '__main__':
         description="Evaluate a method on a dataset.", add_help=False)
     parser.add_argument('INPUT_FILE', type=str,
                         help='Data file to analyze; ensure that the '
-                        'target/label column is labeled as "class".')    
+                        'target/label column is labeled as "class".')
     parser.add_argument('-h', '--help', action='help',
                         help='Show this help message and exit.')
-    parser.add_argument('-ml', action='store', dest='ALG',default=None,type=str, 
+    parser.add_argument('-ml', action='store', dest='ALG',default=None,type=str,
             help='Name of estimator (with matching file in methods/)')
     parser.add_argument('-results_path', action='store', dest='RDIR',
-                        default='results_test', type=str, 
+                        default='results_test', type=str,
                         help='Name of save file')
     parser.add_argument('-seed', action='store', dest='RANDOM_STATE',
                         default=42, type=int, help='Seed / trial')
-    parser.add_argument('-test',action='store_true', dest='TEST', 
+    parser.add_argument('-test',action='store_true', dest='TEST',
                        help='Used for testing a minimal version')
     parser.add_argument('-n_jobs',action='store',  type=str, default='4',
                         help='number of cores available')
@@ -278,21 +278,14 @@ if __name__ == '__main__':
     parser.add_argument('-feature_noise',action='store',dest='X_NOISE',
                         default=0.0, type=float, help='Gaussian noise to add'
                         'to the target')
-    parser.add_argument('-sym_data',action='store_true',  
+    parser.add_argument('-sym_data',action='store_true',
                        help='Use symbolic dataset settings')
-    parser.add_argument('-skip_tuning',action='store_true', dest='SKIP_TUNE', 
+    parser.add_argument('-skip_tuning',action='store_true', dest='SKIP_TUNE',
                         default=False, help='Dont tune the estimator')
 
     args = parser.parse_args()
     set_env_vars(args.n_jobs)
-    # import algorithm 
-    print('import from','methods.'+args.ALG+'.regressor')
-    algorithm = importlib.__import__('methods.'+args.ALG+'.regressor',
-                                     globals(),
-                                     locals(),
-                                     ['*']
-                                    )
-
+    algorithm = importlib.import_module('methods.' + args.ALG)
     print('algorithm:',algorithm.est)
 
     # optional keyword arguments passed to evaluate
@@ -307,8 +300,8 @@ if __name__ == '__main__':
                    args.RDIR,
                    args.RANDOM_STATE,
                    args.ALG,
-                   algorithm.est,  
-                   algorithm.model, 
-                   test = args.TEST, 
+                   algorithm.est,
+                   algorithm.model,
+                   test = args.TEST,
                    **eval_kwargs
                   )

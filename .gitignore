@@ -1,3 +1,4 @@
+experiment/outputs/
 *.lock.yml
 .idea
 results_*/

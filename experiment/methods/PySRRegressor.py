@@ -1,5 +1,6 @@
 from pysr import PySRRegressor
-from multiprocessing import cpu_count
+# from multiprocessing import cpu_count
+import os
 
 
 def complexity(est):
@@ -10,55 +11,56 @@ def model(est):
     return str(est.sympy())
 
 
+try:
+    num_cpus = int(os.environ.get('SLURM_CPUS_ON_NODE')) * int(os.environ.get('SLURM_JOB_NUM_NODES'))
+except TypeError:
+    num_cpus = 10
+
 est = PySRRegressor(
     niterations=1_000_000_000,
-    ncyclesperiteration=2_500,
-    population_size=100,
-    populations=max(15, cpu_count()*2),
-    # budget 10 minutes for compile time,
-    # ensuring we can finish within 2 hours:
-    timeout_in_seconds=2*60*60 - 10*60,
+    populations=3*num_cpus,
+    timeout_in_seconds=10*60,
     maxsize=40,
     maxdepth=20,
     binary_operators=["+", "-", "*", "/"],
-    unary_operators=["sin", "exp", "log", "sqrt"],
-    constraints={
-        **dict(
-            sin=9,
-            exp=9,
-            log=9,
-            sqrt=9,
-        ),
-        **{"/": (-1, 9)}
-    },
-    nested_constraints=dict(
-        sin=dict(
-            sin=0,
-            exp=1,
-            log=1,
-            sqrt=1,
-        ),
-        exp=dict(
-            exp=0,
-            log=0,
-        ),
-        log=dict(
-            exp=0,
-            log=0,
-        ),
-        sqrt=dict(
-            sqrt=0,
-        )
-    ),
-    # prefer multiprocessing:
-    procs=cpu_count(),
-    multithreading=False,
+    unary_operators=["sin", "cos", "exp", "log", "sqrt"],
+    # procs=num_cpus,
+    # parallelism="multiprocessing",
+    parallelism="serial",
+    deterministic=True,
+    procs=1,
+    verbosity=5,
     batching=True,
     batch_size=50,
-    turbo=True,
-    weight_optimize=0.001,
-    adaptive_parsimony_scaling=1_000.0,
-    parsimony=0.0,
+    # turbo=True,
+    # constraints={
+    #     **dict(
+    #         sin=9,
+    #         exp=9,
+    #         log=9,
+    #         sqrt=9,
+    #     ),
+    #     **{"/": (-1, 9)}
+    # },
+    # nested_constraints=dict(
+    #     sin=dict(
+    #         sin=0,
+    #         exp=1,
+    #         log=1,
+    #         sqrt=1,
+    #     ),
+    #     exp=dict(
+    #         exp=0,
+    #         log=0,
+    #     ),
+    #     log=dict(
+    #         exp=0,
+    #         log=0,
+    #     ),
+    #     sqrt=dict(
+    #         sqrt=0,
+    #     )
+    # ),
 )
 
 # See https://astroautomata.com/PySR/tuning/ for tuning advice
